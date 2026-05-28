@@ -13,43 +13,34 @@
  * @author     Christopher Smith <chris@jalakai.co.uk>
  * @author     Gina Häußge, Michael Klier <dokuwiki@chimeric.de>
  */
+if (!defined('DOKU_INC')) die();
 
-/**
- * All DokuWiki plugins to extend the parser/rendering mechanism
- * need to inherit from this class
- */
 class syntax_plugin_include_include extends DokuWiki_Syntax_Plugin {
 
-    /** @var $helper helper_plugin_include */
-    var $helper = null;
+    /** @var helper_plugin_include|null */
+    protected $helper = null;
 
     /**
-     * Get syntax plugin type.
-     *
      * @return string The plugin type.
      */
-    function getType() { return 'substition'; }
+    public function getType() { return 'substition'; }
 
     /**
-     * Get sort order of syntax plugin.
-     *
      * @return int The sort order.
      */
-    function getSort() { return 303; }
+    public function getSort() { return 303; }
 
     /**
-     * Get paragraph type.
-     *
      * @return string The paragraph type.
      */
-    function getPType() { return 'block'; }
+    public function getPType() { return 'block'; }
 
     /**
      * Connect patterns/modes
      *
-     * @param $mode mixed The current mode
+     * @param string $mode The current mode
      */
-    function connectTo($mode) {
+    public function connectTo($mode) {
         $this->Lexer->addSpecialPattern("{{page>.+?}}", $mode, 'plugin_include_include');
         $this->Lexer->addSpecialPattern("{{section>.+?}}", $mode, 'plugin_include_include');
         $this->Lexer->addSpecialPattern("{{namespace>.+?}}", $mode, 'plugin_include_include');
@@ -62,11 +53,10 @@ class syntax_plugin_include_include extends DokuWiki_Syntax_Plugin {
      * @param string       $match   The current match
      * @param int          $state   The match state
      * @param int          $pos     The position of the match
-     * @param Doku_Handler $handler The hanlder object
+     * @param Doku_Handler $handler The handler object
      * @return array The instructions of the plugin
      */
-    function handle($match, $state, $pos, Doku_Handler $handler) {
-
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         $match = substr($match, 2, -2); // strip markup
         list($match, $flags) = array_pad(explode('&', $match, 2), 2, '');
 
@@ -74,20 +64,24 @@ class syntax_plugin_include_include extends DokuWiki_Syntax_Plugin {
         list($mode, $page, $sect) = array_pad(preg_split('/>|#/u', $match, 3), 3, null);
         $check = false;
         if (isset($sect)) $sect = sectionID($sect, $check);
-        $level = NULL;
-        return array($mode, $page, $sect, explode('&', $flags), $level, $pos);
+        $level = null;
+        return [$mode, $page, $sect, explode('&', $flags), $level, $pos];
     }
 
     /**
      * Renders the included page(s)
      *
+     * @param string        $format
+     * @param Doku_Renderer $renderer
+     * @param array         $data
+     * @return bool
      * @author Michael Hamann <michael@content-space.de>
      */
-    function render($format, Doku_Renderer $renderer, $data) {
-        global $ID;
+    public function render($format, Doku_Renderer $renderer, $data) {
+        global $ID, $INPUT;
 
         // static stack that records all ancestors of the child pages
-        static $page_stack = array();
+        static $page_stack = [];
 
         // when there is no id just assume the global $ID is the current id
         if (empty($page_stack)) $page_stack[] = $ID;
@@ -114,19 +108,18 @@ class syntax_plugin_include_include extends DokuWiki_Syntax_Plugin {
 
             $renderer->meta['plugin_include']['instructions'][] = compact('mode', 'page', 'sect', 'parent_id', 'flags');
             if (!isset($renderer->meta['plugin_include']['pages']))
-               $renderer->meta['plugin_include']['pages'] = array(); // add an array for array_merge
+               $renderer->meta['plugin_include']['pages'] = []; // add an array for array_merge
             $renderer->meta['plugin_include']['pages'] = array_merge($renderer->meta['plugin_include']['pages'], $pages);
-            $renderer->meta['plugin_include']['include_content'] = isset($_REQUEST['include_content']);
+            $renderer->meta['plugin_include']['include_content'] = $INPUT->has('include_content');
         }
 
-        $secids = array();
+        $secids = [];
         if ($format == 'xhtml' || $format == 'odt') {
             $secids = p_get_metadata($ID, 'plugin_include secids');
         }
 
         foreach ($pages as $page) {
-            extract($page);
-            $id = $page['id'];
+            $id     = $page['id'];
             $exists = $page['exists'];
 
             if (in_array($id, $page_stack)) continue;
@@ -137,7 +130,7 @@ class syntax_plugin_include_include extends DokuWiki_Syntax_Plugin {
                 $renderer->meta['relation']['references'][$id] = $exists;
                 $renderer->meta['relation']['haspart'][$id]    = $exists;
                 if (!$sect && !$flags['firstsec'] && !$flags['linkonly'] && !isset($renderer->meta['plugin_include']['secids'][$id])) {
-                    $renderer->meta['plugin_include']['secids'][$id] = array('hid' => 'plugin_include__'.str_replace(':', '__', $id), 'pos' => $pos);
+                    $renderer->meta['plugin_include']['secids'][$id] = ['hid' => 'plugin_include__'.str_replace(':', '__', $id), 'pos' => $pos];
                 }
             }
 

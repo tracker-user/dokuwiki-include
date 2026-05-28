@@ -8,28 +8,31 @@
  * @author  Gina Haeussge <osd@foosel.net>
  * @author  Michael Klier <chi@chimeric.de>
  */
+if (!defined('DOKU_INC')) die();
 
 class syntax_plugin_include_header extends DokuWiki_Syntax_Plugin {
 
-    function getType() {
+    public function getType() {
         return 'formatting';
     }
-    
-    function getSort() {
+
+    public function getSort() {
         return 50;
     }
 
-    function handle($match, $state, $pos, Doku_Handler $handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         // this is a syntax plugin that doesn't offer any syntax, so there's nothing to handle by the parser
     }
 
     /**
      * Renders a permalink header.
-     * 
-     * Code heavily copied from the header renderer from inc/parser/xhtml.php, just
-     * added an href parameter to the anchor tag linking to the wikilink.
+     *
+     * @param string        $mode
+     * @param Doku_Renderer $renderer
+     * @param array         $data
+     * @return bool
      */
-    function render($mode, Doku_Renderer $renderer, $data) {
+    public function render($mode, Doku_Renderer $renderer, $data) {
         global $conf;
 
         list($headline, $lvl, $pos, $page, $sect, $flags) = $data;
@@ -40,21 +43,17 @@ class syntax_plugin_include_header extends DokuWiki_Syntax_Plugin {
             $renderer->toc_additem($hid, $headline, $lvl);
             $url = ($sect) ? wl($page) . '#' . $sect : wl($page);
             $renderer->doc .= DOKU_LF.'<h' . $lvl;
-            $classes = array();
-            if($flags['taglogos']) {
+            $classes = [];
+            if ($flags['taglogos']) {
                 $tag = $this->_get_firsttag($page);
-                if($tag) {
+                if ($tag) {
                     $classes[] = 'include_firsttag__' . $tag;
                 }
             }
             // the include header instruction is always at the beginning of the first section edit inside the include
             // wrap so there is no need to close a previous section edit.
             if ($lvl <= $conf['maxseclevel']) {
-                if (defined('SEC_EDIT_PATTERN')) { // for DokuWiki Greebo and more recent versions
-                    $classes[] = $renderer->startSectionEdit($pos, array('target' => 'section', 'name' => $headline, 'hid' => $hid));
-                } else {
-                    $classes[] = $renderer->startSectionEdit($pos, 'section', $headline);
-                }
+                $classes[] = $renderer->startSectionEdit($pos, ['target' => 'section', 'name' => $headline, 'hid' => $hid]);
             }
             if ($classes) {
                 $renderer->doc .= ' class="'. implode(' ', $classes) . '"';
@@ -71,12 +70,14 @@ class syntax_plugin_include_header extends DokuWiki_Syntax_Plugin {
     }
 
     /**
-     * Optionally add a CSS class for the first tag
+     * Optionally returns a CSS class for the first tag
      *
+     * @param string $page
+     * @return string|false
      * @author Michael Klier <chi@chimeric.de>
      */
-    function _get_firsttag($page) {
-        if(plugin_isdisabled('tag') || (!plugin_load('helper', 'tag'))) {
+    public function _get_firsttag($page) {
+        if (plugin_isdisabled('tag') || (!plugin_load('helper', 'tag'))) {
             return false;
         }
         $subject = p_get_metadata($page, 'subject');
@@ -85,7 +86,7 @@ class syntax_plugin_include_header extends DokuWiki_Syntax_Plugin {
         } else {
             list($tag, $rest) = explode(' ', $subject, 2);
         }
-        if($tag) {
+        if ($tag) {
             return $tag;
         } else {
             return false;

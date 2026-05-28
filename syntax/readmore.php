@@ -1,26 +1,35 @@
 <?php
 /**
- * Include plugin (editbtn header component)
+ * Include plugin (readmore component)
  *
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Michael Hamann <michael@content-space.de>
  */
+if (!defined('DOKU_INC')) die();
 
 class syntax_plugin_include_readmore extends DokuWiki_Syntax_Plugin {
 
-    function getType() {
+    public function getType() {
         return 'formatting';
     }
 
-    function getSort() {
+    public function getSort() {
         return 50;
     }
 
-    function handle($match, $state, $pos, Doku_Handler $handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         // this is a syntax plugin that doesn't offer any syntax, so there's nothing to handle by the parser
     }
 
-    function render($mode, Doku_Renderer $renderer, $data) {
+    /**
+     * Renders a "read more" link
+     *
+     * @param string        $mode
+     * @param Doku_Renderer $renderer
+     * @param array         $data
+     * @return bool
+     */
+    public function render($mode, Doku_Renderer $renderer, $data) {
         list($page) = $data;
 
         if ($mode == 'xhtml') {

@@ -5,51 +5,60 @@
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Michael Klier <chi@chimeric.de>
  */
+if (!defined('DOKU_INC')) die();
 
 class syntax_plugin_include_footer extends DokuWiki_Syntax_Plugin {
 
-    function getType() {
+    public function getType() {
         return 'formatting';
     }
 
-    function getSort() {
+    public function getSort() {
         return 300;
     }
 
-    function handle($match, $state, $pos, Doku_Handler $handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         // this is a syntax plugin that doesn't offer any syntax, so there's nothing to handle by the parser
     }
 
     /**
-     * Renders a permalink header.
+     * Renders a footer below the included page
      *
-     * Code heavily copied from the header renderer from inc/parser/xhtml.php, just
-     * added an href parameter to the anchor tag linking to the wikilink.
+     * @param string        $mode
+     * @param Doku_Renderer $renderer
+     * @param array         $data
+     * @return bool
      */
-    function render($mode, Doku_Renderer $renderer, $data) {
-
+    public function render($mode, Doku_Renderer $renderer, $data) {
         list($page, $sect, $sect_title, $flags, $redirect_id, $footer_lvl) = $data;
 
         if ($mode == 'xhtml') {
             $renderer->doc .= $this->html_footer($page, $sect, $sect_title, $flags, $footer_lvl, $renderer);
-	        return true;
+            return true;
         }
         return false;
     }
 
     /**
      * Returns the meta line below the included page
-     * @param $renderer Doku_Renderer_xhtml The (xhtml) renderer
+     *
+     * @param string              $page
+     * @param string              $sect
+     * @param string              $sect_title
+     * @param array               $flags
+     * @param int                 $footer_lvl
+     * @param Doku_Renderer_xhtml $renderer
      * @return string The HTML code of the footer
      */
-    function html_footer($page, $sect, $sect_title, $flags, $footer_lvl, &$renderer) {
+    public function html_footer($page, $sect, $sect_title, $flags, $footer_lvl, &$renderer) {
         global $conf, $ID;
 
-        if(!$flags['footer']) return '';
+        if (!$flags['footer']) return '';
 
-        $meta  = p_get_metadata($page);
+        $meta   = p_get_metadata($page);
         $exists = page_exists($page);
-        $xhtml = array();
+        $xhtml  = [];
+
         // permalink
         if ($flags['permalink']) {
             $class = ($exists ? 'wikilink1' : 'wikilink2');
@@ -57,14 +66,14 @@ class syntax_plugin_include_footer extends DokuWiki_Syntax_Plugin {
             $name  = ($sect) ? $sect_title : $page;
             $title = ($sect) ? $page . '#' . $sect : $page;
             if (!$title) $title = str_replace('_', ' ', noNS($page));
-            $link = array(
-                    'url'    => $url,
-                    'title'  => $title,
-                    'name'   => $name,
-                    'target' => $conf['target']['wiki'],
-                    'class'  => $class . ' permalink',
-                    'more'   => 'rel="bookmark"',
-                    );
+            $link = [
+                'url'    => $url,
+                'title'  => $title,
+                'name'   => $name,
+                'target' => $conf['target']['wiki'],
+                'class'  => $class . ' permalink',
+                'more'   => 'rel="bookmark"',
+            ];
             $xhtml[] = $renderer->_formatLink($link);
         }
 
@@ -90,13 +99,9 @@ class syntax_plugin_include_footer extends DokuWiki_Syntax_Plugin {
 
         // author
         if ($flags['user'] && $exists) {
-            $author   = $meta['user'];
+            $author = $meta['user'];
             if ($author) {
-                if (function_exists('userlink')) {
-                    $xhtml[] = '<span class="vcard author">' . userlink($author) . '</span>';
-                } else { // DokuWiki versions < 2014-05-05 doesn't have userlink support, fall back to not providing a link
-                    $xhtml[] = '<span class="vcard author">' . editorinfo($author) . '</span>';
-                }
+                $xhtml[] = '<span class="vcard author">' . userlink($author) . '</span>';
             }
         }
 
@@ -117,7 +122,7 @@ class syntax_plugin_include_footer extends DokuWiki_Syntax_Plugin {
         // tags - let Tag Plugin do the work for us
         if (empty($sect) && $flags['tags'] && (!plugin_isdisabled('tag')) && ($tag = plugin_load('helper', 'tag'))) {
             $tags = $tag->td($page);
-            if($tags) {
+            if ($tags) {
                 $xhtml .= '<div class="tags"><span>' . DOKU_LF
                               . DOKU_TAB . $tags . DOKU_LF
                               . DOKU_TAB . '</span></div>' . DOKU_LF;
